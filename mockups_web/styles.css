@@ -1,0 +1,430 @@
+:root{
+  --bg: #ffffff;
+  --surface: #f2f2f7; /* iOS secondarySystemBackground-ish */
+  --ink: rgba(0,0,0,.92);
+  --muted: rgba(0,0,0,.56);
+  --hair: rgba(0,0,0,.10);
+
+  --xs: 6px;
+  --sm: 10px;
+  --md: 16px;
+  --lg: 22px;
+  --xl: 30px;
+
+  /* warm-gray accent per level (roughly matches DesignSystem.swift) */
+  --accent0: rgba(0,0,0,.20);
+  --accent1: rgb(158,150,140);
+  --accent2: rgb(122,115,105);
+  --accent3: rgb(92,84,77);
+}
+
+*{ box-sizing: border-box; }
+body{
+  margin:0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  background: #fafafa;
+}
+
+.topbar{
+  display:flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e6e6e6;
+  background: white;
+}
+.brand{ font-weight: 700; letter-spacing: .18em; font-size: 12px; color: var(--muted); }
+.meta{ display:flex; gap: 12px; font-size: 12px; color: var(--muted); }
+
+.wrap{
+  display:grid;
+  grid-template-columns: 420px 1fr;
+  gap: 18px;
+  padding: 18px;
+  align-items: start;
+}
+
+.controls{
+  background:white;
+  border: 1px solid #e9e9e9;
+  border-radius: 14px;
+  padding: 14px;
+}
+.controls .row{ display:flex; align-items:center; gap: 10px; margin-bottom: 10px; }
+.controls label{ width: 72px; font-size: 12px; color: var(--muted); }
+.controls input, .controls select{
+  flex: 1;
+  padding: 10px 10px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.controls .pill{
+  border: 1px solid #dedede;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor:pointer;
+}
+.controls .pill.active{
+  border-color: #111;
+}
+.controls .spacer{ flex:1; }
+.controls .hint{ font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 10px; }
+
+.phone{ display:flex; justify-content:center; }
+.screen{
+  width: 390px; /* iPhone 14-ish */
+  height: 844px;
+  border-radius: 42px;
+  border: 1px solid #e1e1e1;
+  background: var(--bg);
+  box-shadow: 0 30px 80px rgba(0,0,0,.12);
+  overflow:hidden;
+}
+.screenPad{ padding: var(--md); }
+
+/* editorial rhythm: keep content away from the very top */
+.tpl{ margin-top: 12px; }
+
+/* slightly more centered composition */
+.screenPad{
+  padding-top: 22px;
+}
+
+/* full-bleed covers inside the phone */
+.fullBleed{
+  margin-left: -16px;
+  margin-right: -16px;
+}
+
+.header{ display:flex; justify-content:space-between; align-items: baseline; }
+.cap{ font-size: 12px; letter-spacing: .18em; color: var(--muted); font-weight: 600; }
+.hairline{ height: 1px; background: var(--hair); margin: 8px 0; }
+.subrow{ display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--lg); }
+.lvl{ font-size: 13px; color: var(--accent2); }
+
+.title{
+  font-family: ui-serif, "New York", "Times New Roman", serif;
+  font-size: 18px;
+  color: var(--muted);
+}
+.prompt{ font-size: 18px; font-weight: 650; color: var(--ink); }
+.prompt.big{ font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -.02em; }
+.muted{ color: var(--muted); }
+.mono{ font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700; font-size: 18px; }
+
+.tag{
+  display:inline-block;
+  font-size: 12px;
+  letter-spacing: .10em;
+  font-weight: 800;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.36);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--accent2);
+}
+
+.note{
+  font-size: 13px;
+  color: rgba(0,0,0,.46);
+  font-style: italic;
+  letter-spacing: -.01em;
+  text-transform: lowercase;
+}
+
+/* Category: same italic vibe but with more presence */
+.category{
+  font-size: 13px;
+  color: rgba(0,0,0,.58);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  text-transform: lowercase;
+}
+
+.actionButton{
+  display:inline-flex;
+  align-items:center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.30);
+  color: var(--accent2);
+  font-size: 12px;
+  letter-spacing: .18em;
+  font-weight: 900;
+  cursor:pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* keep the old cta as plain text (used in controls only) */
+.cta{
+  margin-top: 10px;
+  background: transparent;
+  border: none;
+  color: var(--accent2);
+  font-size: 12px;
+  letter-spacing: .18em;
+  font-weight: 800;
+  cursor:pointer;
+  padding: 6px 0;
+}
+
+/* templates */
+.tpl{ display:none; }
+
+/* leave room for bottom tab bar (A/C) */
+.screen[data-template="a"] .tpl-a,
+.screen[data-template="c"] .tpl-c{
+  padding-bottom: 76px; /* footer/tabbar space */
+}
+
+/* A: reference-like cover typography */
+.mast{ display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.headline{
+  font-size: 54px;
+  line-height: .95;
+  letter-spacing: -.03em;
+  font-weight: 800;
+  margin: 4px 0 16px 0;
+}
+.dek{ font-size: 14px; line-height: 1.3; margin-bottom: 16px; }
+
+/* Keep covers feeling centered (less top-hugging) */
+.coverA{ min-height: 360px; border-radius: 30px; }
+.coverD{ min-height: 720px; border-radius: 36px; }
+/* D: almost full screen photo, low opacity */
+.screen[data-template="d"] .cover-d{
+  opacity: .55;
+}
+
+/* D: make it truly full-screen inside the phone */
+.screen[data-template="d"] .screenPad{ padding: 0; }
+.screen[data-template="d"] .tpl{ margin-top: 0; }
+.screen[data-template="d"] .header,
+.screen[data-template="d"] .hairline,
+.screen[data-template="d"] .subrow{ display:none; }
+
+.screen[data-template="d"] .coverD{
+  min-height: 844px;   /* match .screen height */
+  height: 844px;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;           /* override fullBleed */
+}
+
+.rowEditorial{ display:flex; align-items:center; justify-content: space-between; gap: 14px; margin-top: 16px; }
+.ruleArrow{
+  height: 1px;
+  background: rgba(0,0,0,.14);
+  flex: 1;
+  position: relative;
+}
+.ruleArrow.sidebarRule{
+  flex: none;
+  width: 100%;
+  margin-top: 14px;
+}
+.ruleArrow::after{
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(0,0,0,.22);
+  border-bottom: 2px solid rgba(0,0,0,.22);
+  transform: rotate(-45deg);
+  position:absolute;
+  right: -1px;
+  top: -5px;
+}
+
+/* C: meta outside + centered cover text */
+.metaOut{ display:flex; justify-content: space-between; align-items: baseline; margin: 6px 0 14px 0; }
+.metaRight{ display:flex; align-items:center; gap: 10px; }
+.rowMeta{ display:flex; align-items: baseline; gap: 10px; }
+
+.coverTextBottom{
+  left: 22px;
+  right: 22px;
+  top: 22px;
+  bottom: 22px;
+  display:flex;
+  align-items:center;
+}
+
+/* B: cover should feel ~3/4 of the phone height */
+.coverB{ border-radius: 34px; }
+.screen[data-template="b"] .coverB{ box-shadow: none; }
+
+/* let B occupy more vertical space */
+.screen[data-template="b"] .tpl-b{ min-height: 820px; align-items: center; }
+
+/* Make the main column define a stable height so the cover can actually grow */
+.screen[data-template="b"] .tpl-b .main{
+  height: 760px;                 /* near full usable height */
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ~3/4 of 844px ≈ 633px. We go a bit taller to feel dominant. */
+.screen[data-template="b"] .coverB{
+  height: 680px;
+  min-height: 680px;
+}
+
+/* B: editorial prompt layout inside the cover */
+.screen[data-template="b"] .coverTextBottom{
+  display:flex;
+  align-items:flex-end;
+  justify-content:flex-end;
+  text-align: right;
+  /* remove the translucent plate for B (photo is already B/W) */
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0; /* no plate padding */
+}
+.screen[data-template="b"] #promptOutB{
+  max-width: 280px;           /* magazine column feel */
+  font-size: 34px;
+  font-weight: 850;
+  line-height: 1.02;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+/* also ensure the generic coverText plate doesn't apply */
+.screen[data-template="b"] .cover .coverText{
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.coverC{ 
+  height: 640px;               /* actually grows the cover */
+  min-height: 640px;
+  border-radius: 30px;
+  margin: 0 14px;              /* smaller relative size (inset card) */
+}
+
+/* C: make it a classic vertical card + CTA near bottom (not falling off-screen) */
+.screen[data-template="c"] .tpl-c{
+  display:flex;
+  flex-direction: column;
+  min-height: 700px;
+  padding-bottom: 18px;
+}
+.screen[data-template="c"] .rowEditorial{ margin-top: auto; padding: 0 14px; }
+
+/* C: text should live in a bottom area (not full cover) */
+.screen[data-template="c"] .coverTextCenter{
+  left: 26px;
+  right: 26px;
+  bottom: 26px;
+  top: auto;
+  max-height: 42%;
+  display:flex;
+  align-items:flex-end;
+  justify-content:flex-start;
+  text-align: left;
+}
+
+/* Only show the selected template. (Important: template-specific layout must be scoped,
+   otherwise later rules override `.tpl{display:none;}` and you see duplicates.) */
+.screen[data-template="a"] .tpl-a{ display:flex; flex-direction: column; gap: var(--md); }
+.screen[data-template="b"] .tpl-b{ display:grid; grid-template-columns: 120px 1fr; gap: var(--lg); align-items:start; }
+.screen[data-template="c"] .tpl-c{ display:flex; flex-direction:column; gap: var(--md); }
+.screen[data-template="d"] .tpl-d{ display:flex; flex-direction:column; gap: var(--lg); }
+
+/* internal layout for B */
+.tpl-b .index{ display:flex; flex-direction:column; gap: 10px; }
+.tpl-b .main{ display:flex; flex-direction:column; gap: var(--md); overflow: visible; }
+/* B: let the cover bleed outside the column a bit */
+.screen[data-template="b"] .cover-b{
+  margin-right: -22px;
+  margin-left: -6px;
+  border-radius: 30px;
+  opacity: .86;
+}
+
+/* cover (editorial) */
+.cover{
+  position: relative;
+  border-radius: 26px;
+  overflow: hidden;
+  border: none;                 /* less card, more cover */
+  background-size: cover;
+  background-position: center;
+  min-height: 320px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.10);
+}
+/* alpha layer for readability (editorial, not UI) */
+.cover .coverOverlay{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(to top, rgba(255,255,255,.90) 0%, rgba(255,255,255,.58) 44%, rgba(255,255,255,0) 76%),
+    linear-gradient(to bottom, rgba(0,0,0,.18) 0%, rgba(0,0,0,0) 40%);
+}
+/* optional: a semi-transparent plate behind text (feels magazine, not UI card) */
+.cover .coverText{
+  position:absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 12px 14px;
+  border-radius: 20px;
+  /* lighter plate: keeps the image present */
+  background: rgba(255,255,255,.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,0,0,.05);
+}
+.cover .coverMeta{
+  position:absolute;
+  left: var(--md);
+  right: var(--md);
+  top: var(--md);
+  display:flex;
+  justify-content: space-between;
+  gap: 10px;
+  text-shadow: 0 1px 0 rgba(255,255,255,.65);
+}
+
+/* one image per template */
+.cover-a{ background-image: url("assets/20962.jpg"); }
+.cover-b{ background-image: url("assets/229.jpg"); }
+.cover-c{ background-image: url("assets/3909.jpg"); }
+.cover-d{ background-image: url("assets/13683.jpg"); }
+
+.poster{ position: relative; border-radius: 26px; }
+.poster .overlay{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  padding: 22px;
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+  background: none; /* handled by .coverOverlay */
+}
+
+/* level coloring */
+.screen[data-level="0"] .lvl, .screen[data-level="0"] .cta, .screen[data-level="0"] .tag, .screen[data-level="0"] .actionButton{ color: var(--accent0); }
+.screen[data-level="1"] .lvl, .screen[data-level="1"] .cta, .screen[data-level="1"] .tag, .screen[data-level="1"] .actionButton{ color: var(--accent1); }
+.screen[data-level="2"] .lvl, .screen[data-level="2"] .cta, .screen[data-level="2"] .tag, .screen[data-level="2"] .actionButton{ color: var(--accent2); }
+.screen[data-level="3"] .lvl, .screen[data-level="3"] .cta, .screen[data-level="3"] .tag, .screen[data-level="3"] .actionButton{ color: var(--accent3); }
+
+@media (max-width: 980px){
+  .wrap{ grid-template-columns: 1fr; }
+  .controls{ order: 2; }
+}

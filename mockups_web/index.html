@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SidequestJournal — Today Mockups</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SIDEQUEST</div>
+    <div class="meta">
+      <span class="day" id="appDay">2026-02-22</span>
+      <span class="level" id="level">Nivel 2</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="controls">
+      <div class="row">
+        <label>Template</label>
+        <button data-template="a" class="pill active">A</button>
+        <button data-template="b" class="pill">B</button>
+        <button data-template="c" class="pill">C</button>
+        <button data-template="d" class="pill">D</button>
+        <span class="spacer"></span>
+        <label>Nivel</label>
+        <select id="levelSelect">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label>Título</label>
+        <input id="title" type="text" value="Camina sin audífonos" />
+      </div>
+      <div class="hint">(Nota: el título no se muestra en la portada; sólo como metadata.)</div>
+      <div class="row">
+        <label>Prompt</label>
+        <input id="prompt" type="text" value="Sal 15 minutos y nota 3 cosas que normalmente ignoras." />
+      </div>
+      <div class="row">
+        <label>Categoría</label>
+        <input id="category" type="text" value="Atención" />
+      </div>
+
+      <div class="hint">Edita texto, cambia template y nivel. Esto es un espejo rápido del layout editorial para validar antes de pasar a SwiftUI.</div>
+    </section>
+
+    <section class="phone">
+      <div class="screen" id="screen" data-template="a" data-level="2">
+        <div class="screenPad">
+          <div class="header">
+            <div class="cap">SIDEQUEST</div>
+            <div class="cap" id="appDay2">2026-02-22</div>
+          </div>
+          <div class="hairline"></div>
+          <div class="subrow">
+            <div class="lvl" id="level2">Nivel 2</div>
+            <div class="ghost">&nbsp;</div>
+          </div>
+
+          <!-- TEMPLATE A (tipo portada: tipografía arriba + imagen) -->
+          <section class="tpl tpl-a">
+            <div class="mast">
+              <div class="cap">SIDEQUEST</div>
+              <div class="metaRight">
+                <span class="category" id="catMetaA">atención</span>
+                <span class="note" id="durA">15 min</span>
+              </div>
+            </div>
+
+            <div class="headline" id="promptOut">Sal 15 minutos y nota 3 cosas que normalmente ignoras.</div>
+
+            <!-- CTA antes del cover -->
+            <div class="rowEditorial">
+              <button class="actionButton" type="button">COMPLETAR</button>
+              <div class="ruleArrow"></div>
+            </div>
+
+            <div class="cover cover-a coverA fullBleed">
+              <div class="coverOverlay"></div>
+            </div>
+          </section>
+
+          <!-- TEMPLATE B -->
+          <section class="tpl tpl-b">
+            <aside class="index">
+              <div class="cap">INDEX</div>
+              <div class="hairline"></div>
+              <div class="kv">
+                <div class="cap">ID.</div>
+                <div class="mono">22</div>
+              </div>
+              <div class="category" id="chipB">atención</div>
+              <div class="note" id="durB">15 min</div>
+              <div class="lvl" id="levelB">Nivel 2</div>
+              <div class="spacer"></div>
+              <button class="actionButton" type="button">COMPLETAR</button>
+              <div class="ruleArrow sidebarRule"></div>
+            </aside>
+            <div class="main">
+              <div class="cover cover-b coverB fullBleed">
+                <div class="coverOverlay"></div>
+                <div class="coverText coverTextBottom">
+                  <div class="prompt" id="promptOutB">Sal 15 minutos y nota 3 cosas que normalmente ignoras.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TEMPLATE C (imagen + texto centrado, metadatos afuera) -->
+          <section class="tpl tpl-c">
+            <div class="metaOut">
+              <div class="cap">SIDEQUEST</div>
+              <div class="metaRight">
+                <span class="note">ID. 2026-02-22</span>
+                <span class="category" id="catC">atención</span>
+                <span class="note" id="durC">15 min</span>
+              </div>
+            </div>
+
+            <div class="cover cover-c coverC">
+              <div class="coverOverlay"></div>
+              <div class="coverText coverTextCenter">
+                <div class="prompt" id="promptOutC">Sal 15 minutos y nota 3 cosas que normalmente ignoras.</div>
+              </div>
+            </div>
+
+            <div class="rowEditorial">
+              <button class="actionButton" type="button">COMPLETAR</button>
+              <div class="ruleArrow"></div>
+            </div>
+          </section>
+
+          <!-- TEMPLATE D -->
+          <section class="tpl tpl-d">
+            <div class="poster cover cover-d coverD fullBleed">
+              <div class="coverOverlay"></div>
+              <div class="overlay">
+                <div class="rowMeta">
+                  <div class="category" id="catD">atención</div>
+                  <div class="note" id="durD">15 min</div>
+                </div>
+                <div class="prompt big" id="promptOutD">Sal 15 minutos y nota 3 cosas que normalmente ignoras.</div>
+                <div class="rowEditorial">
+                  <button class="actionButton" type="button">COMPLETAR</button>
+                  <div class="ruleArrow"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="mock.js"></script>
+</body>
+</html>
