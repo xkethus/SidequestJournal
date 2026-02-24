@@ -8,3 +8,6 @@ DerivedData/
 .SwiftPM/
 .swiftpm/
 .build/
+
+# Local backup of nested git metadata (not part of repo)
+.nested_git_backup/
