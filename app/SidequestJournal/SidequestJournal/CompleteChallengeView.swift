@@ -2,6 +2,12 @@ import SwiftUI
 import SwiftData
 
 struct CompleteChallengeView: View {
+    enum EvidenceInputMode: String, CaseIterable {
+        case text = "Texto"
+        case voice = "Voz"
+        case media = "Media"
+    }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -10,8 +16,8 @@ struct CompleteChallengeView: View {
 
     // Nota: por ahora el campo visibility de JournalEntry se conserva (legacy),
     // pero ya no lo exponemos en UI. La salida (share/export) es una acción.
+    @State private var mode: EvidenceInputMode = .text
     @State private var textEvidence: String = ""
-    @State private var note: String = ""
     @State private var errorMessage: String?
 
     var body: some View {
@@ -21,46 +27,45 @@ struct CompleteChallengeView: View {
 
                 SJCard(level: 0) {
                     VStack(alignment: .leading, spacing: SJ.Spacing.sm) {
-                        Text("TU HUELLA")
-                            .font(SJ.Typography.caption())
-                            .tracking(2)
-                            .foregroundStyle(SJ.Palette.mutedInk)
+                        // Pills (switch de tipo de huella)
+                        HStack(spacing: 8) {
+                            pill("Texto", isSelected: mode == .text) { mode = .text }
+                            pill("Voz", isSelected: mode == .voice) { mode = .voice }
+                            pill("Media", isSelected: mode == .media) { mode = .media }
+                            Spacer(minLength: 0)
+                        }
 
-                        Text("Deja una nota, una foto o un audio. Es para ti.\nSi algún día quieres, puedes compartir tu journey.")
-                            .font(.footnote)
-                            .foregroundStyle(SJ.Palette.mutedInk)
+                        switch mode {
+                        case .text:
+                            TextEditor(text: $textEvidence)
+                                .frame(minHeight: 170)
+                                .scrollContentBackground(.hidden)
+                                .background(Color.clear)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
+                                        .stroke(SJ.Palette.hairline, lineWidth: 1)
+                                )
 
-                        Text("Texto")
-                            .font(SJ.Typography.headline())
+                        case .voice:
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Nota de voz")
+                                    .font(SJ.Typography.headline())
+                                Text("Próximo: grabar y guardar audio en tu journal (local en el iPhone).")
+                                    .font(.footnote)
+                                    .foregroundStyle(SJ.Palette.mutedInk)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                        TextEditor(text: $textEvidence)
-                            .frame(minHeight: 140)
-                            .scrollContentBackground(.hidden)
-                            .background(Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
-                                    .stroke(SJ.Palette.hairline, lineWidth: 1)
-                            )
-
-                        Text("Adjuntos (próximo): foto / audio / video.")
-                            .font(.footnote)
-                            .foregroundStyle(SJ.Palette.mutedInk)
-                    }
-                }
-
-                // VISIBILIDAD (MVP legacy)
-                // Se conserva en modelo por compatibilidad, pero la UX ahora es:
-                // evidencia = local por defecto; compartir/exportar es una acción explícita.
-
-                SJCard(level: 0) {
-                    VStack(alignment: .leading, spacing: SJ.Spacing.sm) {
-                        Text("NOTA")
-                            .font(SJ.Typography.caption())
-                            .tracking(2)
-                            .foregroundStyle(SJ.Palette.mutedInk)
-
-                        TextField("¿Cómo te fue?", text: $note, axis: .vertical)
-                            .textFieldStyle(.roundedBorder)
+                        case .media:
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Imagen o video")
+                                    .font(SJ.Typography.headline())
+                                Text("Próximo: seleccionar (o capturar) imagen/video y guardarlo local.")
+                                    .font(.footnote)
+                                    .foregroundStyle(SJ.Palette.mutedInk)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                 }
 
@@ -91,16 +96,6 @@ struct CompleteChallengeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: SJ.Spacing.sm) {
-            Text("COMPLETE")
-                .font(SJ.Typography.caption())
-                .tracking(2.2)
-                .foregroundStyle(SJ.Palette.mutedInk)
-
-            // Jerarquía: prompt manda (bold); title queda sutil como subtítulo.
-            Text(challenge.title)
-                .font(.system(size: 18, weight: .regular, design: .serif))
-                .foregroundStyle(SJ.Palette.mutedInk)
-
             Text(challenge.prompt)
                 .font(.system(size: 18, weight: .semibold, design: .default))
                 .foregroundStyle(SJ.Palette.ink)
@@ -109,7 +104,26 @@ struct CompleteChallengeView: View {
         }
     }
 
+    private func pill(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title.uppercased())
+                .font(SJ.Typography.caption())
+                .tracking(1.2)
+                .foregroundStyle(isSelected ? SJ.Palette.ink : SJ.Palette.mutedInk)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule().fill(isSelected ? SJ.Palette.accentGradient(for: 2) : SJ.Palette.accentGradient(for: 0))
+                )
+                .overlay(
+                    Capsule().stroke(SJ.Palette.hairline, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
     private func save() {
+        // Por ahora: solo texto es funcional.
         let trimmed = textEvidence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             errorMessage = "Deja aunque sea una línea para recordar tu día."
@@ -119,9 +133,7 @@ struct CompleteChallengeView: View {
         do {
             let appDay = assignment?.appDay ?? AppDay.isoDayString(from: .now)
 
-            // Por ahora seguimos requiriendo texto hasta que el UI de adjuntos esté activo.
-            // (El modelo ya está listo para múltiples adjuntos en EvidenceAttachment.)
-            let entry = JournalEntry(appDay: appDay, challengeId: challenge.id, visibility: .private, note: note.isEmpty ? nil : note)
+            let entry = JournalEntry(appDay: appDay, challengeId: challenge.id, visibility: .private, note: nil)
             modelContext.insert(entry)
 
             let ev = Evidence(entryId: entry.id, text: trimmed)
