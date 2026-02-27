@@ -21,9 +21,13 @@ struct CompleteChallengeView: View {
 
                 SJCard(level: 0) {
                     VStack(alignment: .leading, spacing: SJ.Spacing.sm) {
-                        Text("EVIDENCIA")
+                        Text("TU HUELLA")
                             .font(SJ.Typography.caption())
                             .tracking(2)
+                            .foregroundStyle(SJ.Palette.mutedInk)
+
+                        Text("Deja una nota, una foto o un audio. Es para ti.\nSi algún día quieres, puedes compartir tu journey.")
+                            .font(.footnote)
                             .foregroundStyle(SJ.Palette.mutedInk)
 
                         Text("Texto")
@@ -38,7 +42,7 @@ struct CompleteChallengeView: View {
                                     .stroke(SJ.Palette.hairline, lineWidth: 1)
                             )
 
-                        Text("Adjuntos (Sprint 2+): foto / audio / video.")
+                        Text("Adjuntos (próximo): foto / audio / video.")
                             .font(.footnote)
                             .foregroundStyle(SJ.Palette.mutedInk)
                     }
@@ -108,7 +112,7 @@ struct CompleteChallengeView: View {
     private func save() {
         let trimmed = textEvidence.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            errorMessage = "La evidencia es obligatoria. Escribe al menos una línea."
+            errorMessage = "Deja aunque sea una línea para recordar tu día."
             return
         }
 
