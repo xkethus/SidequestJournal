@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct JournalEntryDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+
     let entry: JournalEntry
 
     @Query private var evidence: [Evidence]
@@ -21,7 +23,7 @@ struct JournalEntryDetailView: View {
         Form {
             Section("Reto") {
                 Text(entry.challengeId)
-                Text("Visibilidad: \(entry.visibilityRaw)")
+                Text("Evidencia: local (compartir es acción manual)")
                     .foregroundStyle(.secondary)
             }
 
@@ -32,16 +34,50 @@ struct JournalEntryDetailView: View {
             }
 
             Section("Evidencia") {
-                ForEach(evidence, id: \Evidence.id) { ev in
-                    if ev.type == .text {
-                        Text(ev.text ?? "")
+                if let ev = evidence.last {
+                    if let text = ev.text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(text)
                     } else {
-                        Text("\(ev.typeRaw) (Sprint 2)")
+                        Text("(Sin texto)")
                             .foregroundStyle(.secondary)
                     }
+
+                    let atts = fetchAttachments(evidenceId: ev.id)
+                    if !atts.isEmpty {
+                        Divider()
+                        ForEach(atts, id: \EvidenceAttachment.id) { att in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(att.kindRaw.uppercased())
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                Text(att.relativePath)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Text("Adjuntos: ninguno")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("(Aún no hay evidencia)")
+                        .foregroundStyle(.secondary)
                 }
             }
         }
         .navigationTitle(entry.appDay)
+    }
+
+    private func fetchAttachments(evidenceId: UUID) -> [EvidenceAttachment] {
+        let descriptor = FetchDescriptor<EvidenceAttachment>(
+            predicate: #Predicate { $0.evidenceId == evidenceId },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+
+        do {
+            return try modelContext.fetch(descriptor)
+        } catch {
+            return []
+        }
     }
 }

@@ -8,7 +8,8 @@ struct CompleteChallengeView: View {
     let challenge: ChallengeCatalog.Challenge
     let assignment: DailyAssignment?
 
-    @State private var visibility: EntryVisibility = .private
+    // Nota: por ahora el campo visibility de JournalEntry se conserva (legacy),
+    // pero ya no lo exponemos en UI. La salida (share/export) es una acción.
     @State private var textEvidence: String = ""
     @State private var note: String = ""
     @State private var errorMessage: String?
@@ -25,7 +26,7 @@ struct CompleteChallengeView: View {
                             .tracking(2)
                             .foregroundStyle(SJ.Palette.mutedInk)
 
-                        Text("Texto (MVP)")
+                        Text("Texto")
                             .font(SJ.Typography.headline())
 
                         TextEditor(text: $textEvidence)
@@ -37,26 +38,15 @@ struct CompleteChallengeView: View {
                                     .stroke(SJ.Palette.hairline, lineWidth: 1)
                             )
 
-                        Text("En Sprint 2: foto / audio / video.")
+                        Text("Adjuntos (Sprint 2+): foto / audio / video.")
                             .font(.footnote)
                             .foregroundStyle(SJ.Palette.mutedInk)
                     }
                 }
 
-                SJCard(level: 0) {
-                    VStack(alignment: .leading, spacing: SJ.Spacing.sm) {
-                        Text("VISIBILIDAD")
-                            .font(SJ.Typography.caption())
-                            .tracking(2)
-                            .foregroundStyle(SJ.Palette.mutedInk)
-
-                        Picker("", selection: $visibility) {
-                            Text("Privada").tag(EntryVisibility.private)
-                            Text("Pública").tag(EntryVisibility.public)
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                }
+                // VISIBILIDAD (MVP legacy)
+                // Se conserva en modelo por compatibilidad, pero la UX ahora es:
+                // evidencia = local por defecto; compartir/exportar es una acción explícita.
 
                 SJCard(level: 0) {
                     VStack(alignment: .leading, spacing: SJ.Spacing.sm) {
@@ -125,10 +115,12 @@ struct CompleteChallengeView: View {
         do {
             let appDay = assignment?.appDay ?? AppDay.isoDayString(from: .now)
 
-            let entry = JournalEntry(appDay: appDay, challengeId: challenge.id, visibility: visibility, note: note.isEmpty ? nil : note)
+            // Por ahora seguimos requiriendo texto hasta que el UI de adjuntos esté activo.
+            // (El modelo ya está listo para múltiples adjuntos en EvidenceAttachment.)
+            let entry = JournalEntry(appDay: appDay, challengeId: challenge.id, visibility: .private, note: note.isEmpty ? nil : note)
             modelContext.insert(entry)
 
-            let ev = Evidence(entryId: entry.id, type: .text, text: trimmed)
+            let ev = Evidence(entryId: entry.id, text: trimmed)
             modelContext.insert(ev)
 
             let unlock = BadgeUnlock(badgeId: challenge.badgeId, challengeId: challenge.id)
