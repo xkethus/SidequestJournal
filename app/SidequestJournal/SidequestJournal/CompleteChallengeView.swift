@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
+import UIKit
 
 struct CompleteChallengeView: View {
     enum EvidenceInputMode: String, CaseIterable {
@@ -18,6 +20,11 @@ struct CompleteChallengeView: View {
     // pero ya no lo exponemos en UI. La salida (share/export) es una acción.
     @State private var mode: EvidenceInputMode = .text
     @State private var textEvidence: String = ""
+
+    // Media (Sprint 2): por ahora foto desde librería (PhotosPicker). Cámara puede venir después.
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var selectedPhotoData: Data?
+
     @State private var errorMessage: String?
 
     var body: some View {
@@ -57,12 +64,43 @@ struct CompleteChallengeView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         case .media:
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Imagen o video")
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Foto")
                                     .font(SJ.Typography.headline())
-                                Text("Próximo: seleccionar (o capturar) imagen/video y guardarlo local.")
-                                    .font(.footnote)
-                                    .foregroundStyle(SJ.Palette.mutedInk)
+
+                                PhotosPicker(
+                                    selection: $selectedPhotoItem,
+                                    matching: .images,
+                                    photoLibrary: .shared()
+                                ) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "photo")
+                                        Text(selectedPhotoData == nil ? "Elegir foto" : "Cambiar foto")
+                                    }
+                                }
+                                .buttonStyle(SJLinkCTAStyle(level: 1))
+
+                                if let selectedPhotoData,
+                                   let uiImage = UIImage(data: selectedPhotoData) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 220)
+                                        .clipShape(RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous)
+                                                .stroke(SJ.Palette.hairline, lineWidth: 1)
+                                        )
+                                } else {
+                                    Text("Selecciona una foto para guardarla como evidencia local.")
+                                        .font(.footnote)
+                                        .foregroundStyle(SJ.Palette.mutedInk)
+                                }
+
+                                // Nota: permitimos texto opcional también.
+                                TextField("Texto opcional…", text: $textEvidence, axis: .vertical)
+                                    .lineLimit(2...6)
+                                    .textFieldStyle(.roundedBorder)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -92,6 +130,16 @@ struct CompleteChallengeView: View {
         }
         .background(SJ.Palette.bg)
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: selectedPhotoItem) { _, newValue in
+            guard let newValue else {
+                selectedPhotoData = nil
+                return
+            }
+            Task {
+                // Nota: Data puede ser pesado; en el futuro conviene downscale/compresión.
+                selectedPhotoData = try? await newValue.loadTransferable(type: Data.self)
+            }
+        }
     }
 
     private var header: some View {
@@ -123,10 +171,25 @@ struct CompleteChallengeView: View {
     }
 
     private func save() {
-        // Por ahora: solo texto es funcional.
+        errorMessage = nil
+
         let trimmed = textEvidence.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            errorMessage = "Deja aunque sea una línea para recordar tu día."
+        let evidenceText: String? = trimmed.isEmpty ? nil : trimmed
+
+        // Validación mínima por modo
+        switch mode {
+        case .text:
+            guard evidenceText != nil else {
+                errorMessage = "Deja aunque sea una línea para recordar tu día."
+                return
+            }
+        case .media:
+            guard selectedPhotoData != nil || evidenceText != nil else {
+                errorMessage = "Agrega una foto o escribe una línea (con eso basta)."
+                return
+            }
+        case .voice:
+            errorMessage = "La evidencia por voz todavía no está lista. Usa Texto o Media por ahora."
             return
         }
 
@@ -136,8 +199,15 @@ struct CompleteChallengeView: View {
             let entry = JournalEntry(appDay: appDay, challengeId: challenge.id, visibility: .private, note: nil)
             modelContext.insert(entry)
 
-            let ev = Evidence(entryId: entry.id, text: trimmed)
+            let ev = Evidence(entryId: entry.id, text: evidenceText)
             modelContext.insert(ev)
+
+            if mode == .media, let data = selectedPhotoData {
+                // Guardamos archivo local y persistimos solo metadata.
+                let relativePath = try EvidenceMediaStore.savePhotoData(data, evidenceId: ev.id, preferredExtension: "jpg")
+                let attachment = EvidenceAttachment(evidenceId: ev.id, kind: .photo, relativePath: relativePath)
+                modelContext.insert(attachment)
+            }
 
             let unlock = BadgeUnlock(badgeId: challenge.badgeId, challengeId: challenge.id)
             modelContext.insert(unlock)
