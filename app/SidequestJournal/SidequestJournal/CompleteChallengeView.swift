@@ -22,7 +22,10 @@ struct CompleteChallengeView: View {
     // Nota: por ahora el campo visibility de JournalEntry se conserva (legacy),
     // pero ya no lo exponemos en UI. La salida (share/export) es una acción.
     @State private var mode: EvidenceInputMode = .text
-    @State private var textEvidence: String = ""
+
+    // Grid editorial: texto (columna derecha) + caption (pie).
+    @State private var layoutText: String = ""
+    @State private var layoutCaption: String = ""
 
     @StateObject private var voiceRecorder = VoiceRecorder(maxDurationSeconds: Self.maxVoiceSeconds)
 
@@ -39,13 +42,24 @@ struct CompleteChallengeView: View {
             VStack(alignment: .leading, spacing: SJ.Spacing.lg) {
                 header
 
-                // Card dominante (casi pantalla completa) que cambia por tipo de evidencia.
-                SJCard(level: 0) {
-                    composer
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 2)
-                }
-                .frame(minHeight: 560)
+                // “Página” editorial (grid 8x8) dentro de una card.
+                EvidenceLayoutCanvas(
+                    template: .swissDefault,
+                    text: $layoutText,
+                    caption: $layoutCaption,
+                    selectedPhotoItem: $selectedPhotoItem,
+                    selectedPhotoData: $selectedPhotoData,
+                    onTakePhoto: {
+                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                            errorMessage = "Esta device no tiene cámara disponible (o estás en el simulador)."
+                            return
+                        }
+                        errorMessage = nil
+                        isCameraSheetPresented = true
+                    },
+                    voiceRecorder: voiceRecorder
+                )
+                .frame(minHeight: 600)
 
                 Spacer(minLength: 24)
             }
@@ -54,7 +68,7 @@ struct CompleteChallengeView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .leading, spacing: 10) {
-                // Pills (switch de tipo de huella) — jerarquía secundaria, arriba del CTA.
+                // Pills — jerarquía secundaria, arriba del CTA.
                 HStack(spacing: 8) {
                     pill("Texto", isSelected: mode == .text) { mode = .text }
                     pill("Voz", isSelected: mode == .voice) { mode = .voice }
@@ -81,10 +95,7 @@ struct CompleteChallengeView: View {
             .padding(.horizontal, SJ.Spacing.md)
             .padding(.top, 10)
             .padding(.bottom, 10)
-            .background(
-                SJ.Palette.bg
-                    .opacity(0.98)
-            )
+            .background(SJ.Palette.bg.opacity(0.98))
             .overlay(alignment: .top) {
                 Rectangle().fill(SJ.Palette.hairline).frame(height: 1)
             }
@@ -128,152 +139,8 @@ struct CompleteChallengeView: View {
         }
     }
 
-    @ViewBuilder
-    private var composer: some View {
-        switch mode {
-        case .text:
-            VStack(alignment: .leading, spacing: SJ.Spacing.md) {
-                Text("Texto")
-                    .font(SJ.Typography.headline())
 
-                TextEditor(text: $textEvidence)
-                    .frame(minHeight: 260)
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
-                            .stroke(SJ.Palette.hairline, lineWidth: 1)
-                    )
 
-                if !textEvidence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    SJEvidenceTextPreview(text: textEvidence)
-                } else {
-                    Text("Escribe una línea. Lo mínimo para recordar tu día.")
-                        .font(.footnote)
-                        .foregroundStyle(SJ.Palette.mutedInk)
-                }
-            }
-
-        case .voice:
-            VStack(alignment: .leading, spacing: SJ.Spacing.md) {
-                Text("Voz")
-                    .font(SJ.Typography.headline())
-
-                // Acción principal grande
-                Button {
-                    switch voiceRecorder.state {
-                    case .idle, .recorded:
-                        voiceRecorder.startRecording()
-                    case .recording:
-                        voiceRecorder.stopRecording()
-                    case .playing:
-                        voiceRecorder.togglePlayback()
-                    }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: voiceRecorder.state == .recording ? "stop.circle.fill" : "mic.circle.fill")
-                        Text(voiceRecorder.state == .recording ? "DETENER" : "GRABAR")
-                            .tracking(1.2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                }
-                .buttonStyle(SJLinkCTAStyle(level: 1))
-
-                SJEvidenceVoicePreview(
-                    durationSeconds: voiceRecorder.durationSeconds,
-                    isPlaying: voiceRecorder.state == .playing,
-                    maxSeconds: Self.maxVoiceSeconds
-                )
-
-                HStack(spacing: 10) {
-                    Button {
-                        voiceRecorder.togglePlayback()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: voiceRecorder.state == .playing ? "pause.circle" : "play.circle")
-                            Text("Escuchar")
-                        }
-                    }
-                    .buttonStyle(SJLinkCTAStyle(level: 1))
-                    .disabled(voiceRecorder.state != .recorded && voiceRecorder.state != .playing)
-
-                    Button {
-                        voiceRecorder.reset()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "arrow.counterclockwise")
-                            Text("Regrabar")
-                        }
-                    }
-                    .buttonStyle(SJLinkCTAStyle(level: 1))
-                    .disabled(voiceRecorder.state == .recording || voiceRecorder.recordedTempURL == nil)
-
-                    Spacer(minLength: 0)
-                }
-
-                if let err = voiceRecorder.errorMessage {
-                    Text(err)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-
-                Text("Máximo: \(Int(Self.maxVoiceSeconds))s. Se guarda local.")
-                    .font(.footnote)
-                    .foregroundStyle(SJ.Palette.mutedInk)
-            }
-
-        case .media:
-            VStack(alignment: .leading, spacing: SJ.Spacing.md) {
-                Text("Foto")
-                    .font(SJ.Typography.headline())
-
-                HStack(spacing: 10) {
-                    Button {
-                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-                            errorMessage = "Esta device no tiene cámara disponible (o estás en el simulador)."
-                            return
-                        }
-                        errorMessage = nil
-                        isCameraSheetPresented = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "camera")
-                            Text("Tomar foto")
-                        }
-                    }
-                    .buttonStyle(SJLinkCTAStyle(level: 1))
-
-                    PhotosPicker(
-                        selection: $selectedPhotoItem,
-                        matching: .images,
-                        photoLibrary: .shared()
-                    ) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "photo")
-                            Text(selectedPhotoData == nil ? "Elegir foto" : "Cambiar foto")
-                        }
-                    }
-                    .buttonStyle(SJLinkCTAStyle(level: 1))
-
-                    Spacer(minLength: 0)
-                }
-
-                if let selectedPhotoData,
-                   let uiImage = UIImage(data: selectedPhotoData) {
-                    SJEvidenceImagePreview(image: uiImage)
-                } else {
-                    Text("Selecciona una foto para guardarla como evidencia local.")
-                        .font(.footnote)
-                        .foregroundStyle(SJ.Palette.mutedInk)
-                }
-
-                TextField("Texto opcional…", text: $textEvidence, axis: .vertical)
-                    .lineLimit(2...6)
-                    .textFieldStyle(.roundedBorder)
-            }
-        }
-    }
 
     private func pill(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -296,8 +163,12 @@ struct CompleteChallengeView: View {
     private func save() {
         errorMessage = nil
 
-        let trimmed = textEvidence.trimmingCharacters(in: .whitespacesAndNewlines)
-        let evidenceText: String? = trimmed.isEmpty ? nil : trimmed
+        // En este MVP el grid tiene texto (columna derecha) + caption (pie).
+        // Consolidamos ambos a Evidence.text (Markdown simple) por ahora.
+        let t = layoutText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let c = layoutCaption.trimmingCharacters(in: .whitespacesAndNewlines)
+        let combined = [t.isEmpty ? nil : t, c.isEmpty ? nil : "—\n\(c)"].compactMap { $0 }.joined(separator: "\n\n")
+        let evidenceText: String? = combined.isEmpty ? nil : combined
 
         // Validación mínima por modo
         switch mode {

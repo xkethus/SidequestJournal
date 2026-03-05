@@ -257,9 +257,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Necesitamos acceso a la cámara para que puedas guardar una foto como evidencia en tu journal.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Necesitamos acceso al micrófono para que puedas grabar una nota de voz como evidencia en tu journal.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Necesitamos permiso para guardar fotos en tu fototeca si lo eliges.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Necesitamos acceso a tu fototeca para que puedas elegir una foto como evidencia en tu journal.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Necesitamos acceso al micrófono para que puedas grabar una nota de voz como evidencia en tu journal.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -293,9 +293,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Necesitamos acceso a la cámara para que puedas guardar una foto como evidencia en tu journal.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Necesitamos acceso al micrófono para que puedas grabar una nota de voz como evidencia en tu journal.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Necesitamos permiso para guardar fotos en tu fototeca si lo eliges.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Necesitamos acceso a tu fototeca para que puedas elegir una foto como evidencia en tu journal.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Necesitamos acceso al micrófono para que puedas grabar una nota de voz como evidencia en tu journal.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
