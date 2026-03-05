@@ -17,6 +17,9 @@ struct EvidenceLayoutCanvas: View {
 
     @ObservedObject var voiceRecorder: VoiceRecorder
 
+    @State private var isTextEditorPresented: Bool = false
+    @State private var isCaptionEditorPresented: Bool = false
+
     var body: some View {
         GeometryReader { geo in
             // “Página”: 4:5 (tipo journal)
@@ -50,6 +53,12 @@ struct EvidenceLayoutCanvas: View {
 
                 Spacer(minLength: 0)
             }
+        }
+        .sheet(isPresented: $isTextEditorPresented) {
+            SJTextEditSheet(title: "Texto", placeholder: "Escribe…", text: $text)
+        }
+        .sheet(isPresented: $isCaptionEditorPresented) {
+            SJCaptionEditSheet(caption: $caption)
         }
     }
 
@@ -111,46 +120,55 @@ struct EvidenceLayoutCanvas: View {
     }
 
     private var textBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // auto-fit grande (preview editorial)
-            SJAutoFitTextBox(text: text.isEmpty ? " " : text, height: nil)
+        Button {
+            isTextEditorPresented = true
+        } label: {
+            ZStack(alignment: .topLeading) {
+                SJAutoFitTextBox(text: text.isEmpty ? " " : text, height: nil)
 
-            // editor (mínimo, sin título)
-            TextEditor(text: $text)
-                .font(.system(size: 15))
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                .overlay(
-                    RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
-                        .stroke(SJ.Palette.hairline, lineWidth: 1)
-                )
-                .frame(minHeight: 120)
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Toca para escribir")
+                        .font(.footnote)
+                        .foregroundStyle(SJ.Palette.mutedInk)
+                        .padding(12)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .buttonStyle(.plain)
     }
 
     private var captionBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ViewThatFits(in: .vertical) {
-                Text(caption)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(SJ.Palette.ink)
-                    .lineSpacing(2)
+        Button {
+            isCaptionEditorPresented = true
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                if caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Toca para escribir pie de foto")
+                        .font(.footnote)
+                        .foregroundStyle(SJ.Palette.mutedInk)
+                } else {
+                    ViewThatFits(in: .vertical) {
+                        Text(caption)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(SJ.Palette.ink)
+                            .lineSpacing(2)
 
-                Text(caption)
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundStyle(SJ.Palette.ink)
-                    .lineSpacing(1.5)
+                        Text(caption)
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundStyle(SJ.Palette.ink)
+                            .lineSpacing(1.5)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-
-            TextField("Pie de foto…", text: $caption, axis: .vertical)
-                .lineLimit(1...3)
-                .textFieldStyle(.roundedBorder)
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .buttonStyle(.plain)
     }
 
     private var audioBlock: some View {
@@ -204,5 +222,73 @@ struct EvidenceLayoutCanvas: View {
     private func format(_ seconds: Double) -> String {
         let s = max(0, Int(seconds.rounded()))
         return String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
+// MARK: - Sheets (Preview limpio → Edit)
+
+private struct SJTextEditSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let title: String
+    let placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $text)
+                        .font(.system(size: 16))
+
+                    if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(placeholder)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 8)
+                            .padding(.leading, 5)
+                    }
+                }
+                .padding(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous)
+                        .stroke(SJ.Palette.hairline, lineWidth: 1)
+                )
+
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Listo") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+private struct SJCaptionEditSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var caption: String
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("Pie de foto…", text: $caption, axis: .vertical)
+                    .lineLimit(2...6)
+                    .textFieldStyle(.roundedBorder)
+
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .navigationTitle("Pie de foto")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Listo") { dismiss() }
+                }
+            }
+        }
     }
 }
