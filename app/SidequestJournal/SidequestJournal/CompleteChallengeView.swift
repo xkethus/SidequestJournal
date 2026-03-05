@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 import UIKit
+import AVFoundation
 
 struct CompleteChallengeView: View {
     enum EvidenceInputMode: String, CaseIterable {
@@ -9,6 +10,8 @@ struct CompleteChallengeView: View {
         case voice = "Voz"
         case media = "Media"
     }
+
+    private static let maxVoiceSeconds: Double = 30
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -20,6 +23,8 @@ struct CompleteChallengeView: View {
     // pero ya no lo exponemos en UI. La salida (share/export) es una acción.
     @State private var mode: EvidenceInputMode = .text
     @State private var textEvidence: String = ""
+
+    @StateObject private var voiceRecorder = VoiceRecorder(maxDurationSeconds: Self.maxVoiceSeconds)
 
     // Media (Sprint 2): foto desde librería (PhotosPicker) o desde cámara.
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -46,20 +51,83 @@ struct CompleteChallengeView: View {
 
                         switch mode {
                         case .text:
-                            TextEditor(text: $textEvidence)
-                                .frame(minHeight: 170)
-                                .scrollContentBackground(.hidden)
-                                .background(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
-                                        .stroke(SJ.Palette.hairline, lineWidth: 1)
-                                )
+                            VStack(alignment: .leading, spacing: 10) {
+                                TextEditor(text: $textEvidence)
+                                    .frame(minHeight: 170)
+                                    .scrollContentBackground(.hidden)
+                                    .background(Color.clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
+                                            .stroke(SJ.Palette.hairline, lineWidth: 1)
+                                    )
+
+                                if !textEvidence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    SJEvidenceTextPreview(text: textEvidence)
+                                }
+                            }
 
                         case .voice:
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 10) {
                                 Text("Nota de voz")
                                     .font(SJ.Typography.headline())
-                                Text("Próximo: grabar y guardar audio en tu journal (local en el iPhone).")
+
+                                // Controles
+                                HStack(spacing: 10) {
+                                    Button {
+                                        switch voiceRecorder.state {
+                                        case .idle, .recorded:
+                                            voiceRecorder.startRecording()
+                                        case .recording:
+                                            voiceRecorder.stopRecording()
+                                        case .playing:
+                                            voiceRecorder.togglePlayback()
+                                        }
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: voiceRecorder.state == .recording ? "stop.circle" : "mic.circle")
+                                            Text(voiceRecorder.state == .recording ? "Detener" : "Grabar")
+                                        }
+                                    }
+                                    .buttonStyle(SJLinkCTAStyle(level: 1))
+
+                                    Button {
+                                        voiceRecorder.togglePlayback()
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: voiceRecorder.state == .playing ? "pause.circle" : "play.circle")
+                                            Text("Escuchar")
+                                        }
+                                    }
+                                    .buttonStyle(SJLinkCTAStyle(level: 1))
+                                    .disabled(voiceRecorder.state != .recorded && voiceRecorder.state != .playing)
+
+                                    Button {
+                                        voiceRecorder.reset()
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "arrow.counterclockwise")
+                                            Text("Regrabar")
+                                        }
+                                    }
+                                    .buttonStyle(SJLinkCTAStyle(level: 1))
+                                    .disabled(voiceRecorder.state == .recording || voiceRecorder.recordedTempURL == nil)
+
+                                    Spacer(minLength: 0)
+                                }
+
+                                SJEvidenceVoicePreview(
+                                    durationSeconds: voiceRecorder.durationSeconds,
+                                    isPlaying: voiceRecorder.state == .playing,
+                                    maxSeconds: Self.maxVoiceSeconds
+                                )
+
+                                if let err = voiceRecorder.errorMessage {
+                                    Text(err)
+                                        .font(.footnote)
+                                        .foregroundStyle(.red)
+                                }
+
+                                Text("Máximo: \(Int(Self.maxVoiceSeconds))s. Se guarda local en tu iPhone.")
                                     .font(.footnote)
                                     .foregroundStyle(SJ.Palette.mutedInk)
                             }
@@ -103,15 +171,7 @@ struct CompleteChallengeView: View {
 
                                 if let selectedPhotoData,
                                    let uiImage = UIImage(data: selectedPhotoData) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(height: 220)
-                                        .clipShape(RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous)
-                                                .stroke(SJ.Palette.hairline, lineWidth: 1)
-                                        )
+                                    SJEvidenceImagePreview(image: uiImage)
                                 } else {
                                     Text("Selecciona una foto para guardarla como evidencia local.")
                                         .font(.footnote)
@@ -225,8 +285,10 @@ struct CompleteChallengeView: View {
                 return
             }
         case .voice:
-            errorMessage = "La evidencia por voz todavía no está lista. Usa Texto o Media por ahora."
-            return
+            guard voiceRecorder.recordedTempURL != nil || evidenceText != nil else {
+                errorMessage = "Graba una nota de voz (hasta 30s) o escribe una línea."
+                return
+            }
         }
 
         do {
@@ -245,14 +307,153 @@ struct CompleteChallengeView: View {
                 modelContext.insert(attachment)
             }
 
+            if mode == .voice, let audioURL = voiceRecorder.recordedTempURL {
+                let relativePath = try EvidenceMediaStore.saveFile(from: audioURL, evidenceId: ev.id, preferredExtension: "m4a")
+                let attachment = EvidenceAttachment(
+                    evidenceId: ev.id,
+                    kind: .audio,
+                    relativePath: relativePath,
+                    duration: voiceRecorder.durationSeconds
+                )
+                modelContext.insert(attachment)
+            }
+
             let unlock = BadgeUnlock(badgeId: challenge.badgeId, challengeId: challenge.id)
             modelContext.insert(unlock)
 
             try modelContext.save()
+            if mode == .voice {
+                voiceRecorder.reset()
+            }
             dismiss()
         } catch {
             errorMessage = String(describing: error)
         }
+    }
+}
+
+// MARK: - Evidence Preview (Editorial)
+
+private struct SJEvidenceTextPreview: View {
+    let text: String
+
+    var body: some View {
+        SJCard(level: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PREVIEW")
+                    .font(SJ.Typography.caption())
+                    .tracking(1.2)
+                    .foregroundStyle(SJ.Palette.mutedInk)
+
+                SJAutoFitText(text: text)
+            }
+        }
+    }
+}
+
+private struct SJEvidenceVoicePreview: View {
+    let durationSeconds: Double
+    let isPlaying: Bool
+    let maxSeconds: Double
+
+    var body: some View {
+        SJCard(level: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PREVIEW")
+                    .font(SJ.Typography.caption())
+                    .tracking(1.2)
+                    .foregroundStyle(SJ.Palette.mutedInk)
+
+                HStack(spacing: 10) {
+                    Image(systemName: isPlaying ? "speaker.wave.2" : "waveform")
+                        .foregroundStyle(SJ.Palette.ink)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Nota de voz")
+                            .font(SJ.Typography.body())
+                            .foregroundStyle(SJ.Palette.ink)
+                        Text("\(format(durationSeconds)) / \(Int(maxSeconds))s")
+                            .font(.footnote)
+                            .foregroundStyle(SJ.Palette.mutedInk)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Rectangle()
+                        .fill(SJ.Palette.hairline)
+                        .frame(width: 1)
+
+                    Text("AUDIO")
+                        .font(SJ.Typography.caption())
+                        .tracking(1.2)
+                        .foregroundStyle(SJ.Palette.mutedInk)
+                }
+            }
+        }
+    }
+
+    private func format(_ seconds: Double) -> String {
+        let s = max(0, Int(seconds.rounded()))
+        return String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
+private struct SJEvidenceImagePreview: View {
+    let image: UIImage
+
+    var body: some View {
+        SJCard(level: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PREVIEW")
+                    .font(SJ.Typography.caption())
+                    .tracking(1.2)
+                    .foregroundStyle(SJ.Palette.mutedInk)
+
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 220)
+                    .clipShape(RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous)
+                            .stroke(SJ.Palette.hairline, lineWidth: 1)
+                    )
+            }
+        }
+    }
+}
+
+/// Texto en caja fija, con auto-fit por escalones (estilo editorial).
+private struct SJAutoFitText: View {
+    let text: String
+
+    var body: some View {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
+            .fill(Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
+                    .stroke(SJ.Palette.hairline, lineWidth: 1)
+            )
+            .overlay(alignment: .topLeading) {
+                ViewThatFits(in: .vertical) {
+                    fittedText(trimmed, size: 18, lineSpacing: 3)
+                    fittedText(trimmed, size: 16, lineSpacing: 2.5)
+                    fittedText(trimmed, size: 14, lineSpacing: 2)
+                    fittedText(trimmed, size: 13, lineSpacing: 1.5)
+                }
+                .padding(12)
+            }
+            .frame(height: 140)
+    }
+
+    private func fittedText(_ t: String, size: CGFloat, lineSpacing: CGFloat) -> some View {
+        Text(t)
+            .font(.system(size: size, weight: .regular, design: .default))
+            .foregroundStyle(SJ.Palette.ink)
+            .lineSpacing(lineSpacing)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 

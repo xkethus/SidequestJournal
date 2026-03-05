@@ -16,6 +16,7 @@ enum EvidenceMediaStore {
     /// Guarda un JPEG/PNG como archivo dentro de Application Support/EvidenceMedia/<evidenceId>/
     /// Retorna el path relativo (EvidenceMedia/<evidenceId>/<filename>). Guardamos relativo para que el sandbox pueda moverse.
     static func savePhotoData(_ data: Data, evidenceId: UUID, preferredExtension ext: String = "jpg") throws -> String {
+
         let fm = FileManager.default
         let root = try appSupportRootURL()
 
@@ -27,6 +28,28 @@ enum EvidenceMediaStore {
         let filename = "\(UUID().uuidString).\(ext)"
         let fileURL = evidenceDir.appendingPathComponent(filename)
         try data.write(to: fileURL, options: [.atomic])
+
+        return "\(rootFolderName)/\(evidenceId.uuidString)/\(filename)"
+    }
+
+    /// Copia un archivo (ej. m4a) al sandbox de la app.
+    /// Retorna el path relativo (EvidenceMedia/<evidenceId>/<filename>).
+    static func saveFile(from sourceURL: URL, evidenceId: UUID, preferredExtension ext: String) throws -> String {
+        let fm = FileManager.default
+        let root = try appSupportRootURL()
+
+        let evidenceDir = root.appendingPathComponent(evidenceId.uuidString, isDirectory: true)
+        if !fm.fileExists(atPath: evidenceDir.path) {
+            try fm.createDirectory(at: evidenceDir, withIntermediateDirectories: true)
+        }
+
+        let filename = "\(UUID().uuidString).\(ext)"
+        let destURL = evidenceDir.appendingPathComponent(filename)
+
+        if fm.fileExists(atPath: destURL.path) {
+            try? fm.removeItem(at: destURL)
+        }
+        try fm.copyItem(at: sourceURL, to: destURL)
 
         return "\(rootFolderName)/\(evidenceId.uuidString)/\(filename)"
     }
