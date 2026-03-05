@@ -43,6 +43,7 @@ struct EvidenceLayoutCanvas: View {
                                 x: cellWidth(in: pageWidth) * CGFloat(block.rect.x),
                                 y: cellHeight(in: pageHeight) * CGFloat(block.rect.y)
                             )
+                            .clipped()
                     }
                 }
                 .frame(width: pageWidth, height: pageHeight)
@@ -78,18 +79,10 @@ struct EvidenceLayoutCanvas: View {
                     .scaledToFill()
                     .clipped()
             } else {
-                VStack(spacing: 10) {
-                    Text("FOTO")
-                        .font(SJ.Typography.caption())
-                        .tracking(1.2)
-                        .foregroundStyle(SJ.Palette.mutedInk)
-
+                VStack(spacing: 12) {
                     HStack(spacing: 10) {
                         Button(action: onTakePhoto) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "camera")
-                                Text("Tomar")
-                            }
+                            Image(systemName: "camera")
                         }
                         .buttonStyle(SJLinkCTAStyle(level: 1))
 
@@ -98,13 +91,14 @@ struct EvidenceLayoutCanvas: View {
                             matching: .images,
                             photoLibrary: .shared()
                         ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "photo")
-                                Text("Elegir")
-                            }
+                            Image(systemName: "photo")
                         }
                         .buttonStyle(SJLinkCTAStyle(level: 1))
                     }
+
+                    Text("Añade una foto")
+                        .font(.footnote)
+                        .foregroundStyle(SJ.Palette.mutedInk)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -117,38 +111,27 @@ struct EvidenceLayoutCanvas: View {
     }
 
     private var textBlock: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("TEXTO")
-                .font(SJ.Typography.caption())
-                .tracking(1.2)
-                .foregroundStyle(SJ.Palette.mutedInk)
-
-            // auto-fit dentro del bloque
+        VStack(alignment: .leading, spacing: 10) {
+            // auto-fit grande (preview editorial)
             SJAutoFitTextBox(text: text.isEmpty ? " " : text, height: nil)
 
-            Spacer(minLength: 0)
-
+            // editor (mínimo, sin título)
             TextEditor(text: $text)
-                .font(.system(size: 14))
+                .font(.system(size: 15))
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
                 .overlay(
                     RoundedRectangle(cornerRadius: SJ.Radius.sm, style: .continuous)
                         .stroke(SJ.Palette.hairline, lineWidth: 1)
                 )
-                .frame(minHeight: 90)
+                .frame(minHeight: 120)
         }
-        .padding(10)
+        .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var captionBlock: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("PIE")
-                .font(SJ.Typography.caption())
-                .tracking(1.2)
-                .foregroundStyle(SJ.Palette.mutedInk)
-
+        VStack(alignment: .leading, spacing: 10) {
             ViewThatFits(in: .vertical) {
                 Text(caption)
                     .font(.system(size: 16, weight: .regular))
@@ -166,17 +149,12 @@ struct EvidenceLayoutCanvas: View {
                 .lineLimit(1...3)
                 .textFieldStyle(.roundedBorder)
         }
-        .padding(10)
+        .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var audioBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("AUDIO")
-                .font(SJ.Typography.caption())
-                .tracking(1.2)
-                .foregroundStyle(SJ.Palette.mutedInk)
-
+        HStack(spacing: 12) {
             Button {
                 switch voiceRecorder.state {
                 case .idle, .recorded:
@@ -187,20 +165,14 @@ struct EvidenceLayoutCanvas: View {
                     voiceRecorder.togglePlayback()
                 }
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: voiceRecorder.state == .recording ? "stop.circle" : "mic.circle")
-                    Text(voiceRecorder.state == .recording ? "Detener" : "Grabar")
-                }
+                Image(systemName: voiceRecorder.state == .recording ? "stop.circle.fill" : "mic.circle.fill")
             }
             .buttonStyle(SJLinkCTAStyle(level: 1))
 
             Button {
                 voiceRecorder.togglePlayback()
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: voiceRecorder.state == .playing ? "pause.circle" : "play.circle")
-                    Text("Escuchar")
-                }
+                Image(systemName: voiceRecorder.state == .playing ? "pause.circle" : "play.circle")
             }
             .buttonStyle(SJLinkCTAStyle(level: 1))
             .disabled(voiceRecorder.state != .recorded && voiceRecorder.state != .playing)
@@ -211,8 +183,8 @@ struct EvidenceLayoutCanvas: View {
 
             Spacer(minLength: 0)
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .overlay(
             RoundedRectangle(cornerRadius: SJ.Radius.md, style: .continuous)
                 .stroke(SJ.Palette.hairline, lineWidth: 1)

@@ -28,18 +28,40 @@ struct EvidenceLayoutTemplate: Identifiable, Equatable, Codable {
     var name: String
     var blocks: [EvidenceBlock]
 
+    /// Template Swiss Default (Sprint): FOTO + PIE. Nada más.
     static let swissDefault = EvidenceLayoutTemplate(
         id: "swiss-default",
         name: "Swiss Default",
         blocks: [
-            // Hero photo: 6x8 (izquierda) deja aire a la derecha
-            EvidenceBlock(kind: .photo, rect: EvidenceGridRect(x: 0, y: 0, w: 6, h: 6)),
-
-            // Texto (auto-fit) en columna derecha
-            EvidenceBlock(kind: .text, rect: EvidenceGridRect(x: 6, y: 0, w: 2, h: 6)),
-
-            // Caption / pie de foto: 8x2 abajo
+            // Foto hero ocupando casi toda la página
+            EvidenceBlock(kind: .photo, rect: EvidenceGridRect(x: 0, y: 0, w: 8, h: 6)),
+            // Pie editorial abajo (2 filas)
             EvidenceBlock(kind: .caption, rect: EvidenceGridRect(x: 0, y: 6, w: 8, h: 2)),
         ]
     )
+
+    /// Template Texto grande: TEXTO grande. Sin pie.
+    static let swissTextOnly = EvidenceLayoutTemplate(
+        id: "swiss-text-only",
+        name: "Swiss Text",
+        blocks: [
+            EvidenceBlock(kind: .text, rect: EvidenceGridRect(x: 0, y: 0, w: 8, h: 8)),
+        ]
+    )
+
+    /// Template Voz+Texto: TEXTO grande + AUDIO minimal. Sin pie.
+    static let swissVoiceText = EvidenceLayoutTemplate(
+        id: "swiss-voice-text",
+        name: "Swiss Voice+Text",
+        blocks: [
+            EvidenceBlock(kind: .text, rect: EvidenceGridRect(x: 0, y: 0, w: 8, h: 6)),
+            EvidenceBlock(kind: .audio, rect: EvidenceGridRect(x: 0, y: 6, w: 8, h: 2)),
+        ]
+    )
+
+    static let all: [EvidenceLayoutTemplate] = [
+        .swissDefault,
+        .swissTextOnly,
+        .swissVoiceText,
+    ]
 }

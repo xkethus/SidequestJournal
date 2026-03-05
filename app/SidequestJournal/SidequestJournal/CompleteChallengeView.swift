@@ -42,24 +42,43 @@ struct CompleteChallengeView: View {
             VStack(alignment: .leading, spacing: SJ.Spacing.lg) {
                 header
 
-                // “Página” editorial (grid 8x8) dentro de una card.
-                EvidenceLayoutCanvas(
-                    template: .swissDefault,
-                    text: $layoutText,
-                    caption: $layoutCaption,
-                    selectedPhotoItem: $selectedPhotoItem,
-                    selectedPhotoData: $selectedPhotoData,
-                    onTakePhoto: {
-                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-                            errorMessage = "Esta device no tiene cámara disponible (o estás en el simulador)."
-                            return
-                        }
-                        errorMessage = nil
-                        isCameraSheetPresented = true
-                    },
-                    voiceRecorder: voiceRecorder
-                )
-                .frame(minHeight: 600)
+                // “Página” editorial (grid 8x8). Pills flotan encima.
+                ZStack(alignment: .bottomLeading) {
+                    EvidenceLayoutCanvas(
+                        template: templateForMode,
+                        text: $layoutText,
+                        caption: $layoutCaption,
+                        selectedPhotoItem: $selectedPhotoItem,
+                        selectedPhotoData: $selectedPhotoData,
+                        onTakePhoto: {
+                            guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                                errorMessage = "Esta device no tiene cámara disponible (o estás en el simulador)."
+                                return
+                            }
+                            errorMessage = nil
+                            isCameraSheetPresented = true
+                        },
+                        voiceRecorder: voiceRecorder
+                    )
+
+                    // Pills flotantes (no debajo del grid)
+                    HStack(spacing: 8) {
+                        pill("Texto", isSelected: mode == .text) { mode = .text }
+                        pill("Voz", isSelected: mode == .voice) { mode = .voice }
+                        pill("Media", isSelected: mode == .media) { mode = .media }
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(SJ.Palette.bg.opacity(0.92))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(SJ.Palette.hairline, lineWidth: 1)
+                            )
+                    )
+                    .padding(12)
+                }
+                .frame(minHeight: 620)
 
                 Spacer(minLength: 24)
             }
@@ -68,14 +87,6 @@ struct CompleteChallengeView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .leading, spacing: 10) {
-                // Pills — jerarquía secundaria, arriba del CTA.
-                HStack(spacing: 8) {
-                    pill("Texto", isSelected: mode == .text) { mode = .text }
-                    pill("Voz", isSelected: mode == .voice) { mode = .voice }
-                    pill("Media", isSelected: mode == .media) { mode = .media }
-                    Spacer(minLength: 0)
-                }
-
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
@@ -141,6 +152,17 @@ struct CompleteChallengeView: View {
 
 
 
+
+    private var templateForMode: EvidenceLayoutTemplate {
+        switch mode {
+        case .media:
+            return .swissDefault
+        case .voice:
+            return .swissVoiceText
+        case .text:
+            return .swissTextOnly
+        }
+    }
 
     private func pill(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
