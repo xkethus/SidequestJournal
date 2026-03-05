@@ -21,9 +21,11 @@ struct CompleteChallengeView: View {
     @State private var mode: EvidenceInputMode = .text
     @State private var textEvidence: String = ""
 
-    // Media (Sprint 2): por ahora foto desde librería (PhotosPicker). Cámara puede venir después.
+    // Media (Sprint 2): foto desde librería (PhotosPicker) o desde cámara.
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
+
+    @State private var isCameraSheetPresented: Bool = false
 
     @State private var errorMessage: String?
 
@@ -68,17 +70,36 @@ struct CompleteChallengeView: View {
                                 Text("Foto")
                                     .font(SJ.Typography.headline())
 
-                                PhotosPicker(
-                                    selection: $selectedPhotoItem,
-                                    matching: .images,
-                                    photoLibrary: .shared()
-                                ) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "photo")
-                                        Text(selectedPhotoData == nil ? "Elegir foto" : "Cambiar foto")
+                                HStack(spacing: 10) {
+                                    Button {
+                                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                                            errorMessage = "Esta device no tiene cámara disponible (o estás en el simulador)."
+                                            return
+                                        }
+                                        errorMessage = nil
+                                        isCameraSheetPresented = true
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "camera")
+                                            Text("Tomar foto")
+                                        }
                                     }
+                                    .buttonStyle(SJLinkCTAStyle(level: 1))
+
+                                    PhotosPicker(
+                                        selection: $selectedPhotoItem,
+                                        matching: .images,
+                                        photoLibrary: .shared()
+                                    ) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "photo")
+                                            Text(selectedPhotoData == nil ? "Elegir foto" : "Cambiar foto")
+                                        }
+                                    }
+                                    .buttonStyle(SJLinkCTAStyle(level: 1))
+
+                                    Spacer(minLength: 0)
                                 }
-                                .buttonStyle(SJLinkCTAStyle(level: 1))
 
                                 if let selectedPhotoData,
                                    let uiImage = UIImage(data: selectedPhotoData) {
@@ -130,9 +151,24 @@ struct CompleteChallengeView: View {
         }
         .background(SJ.Palette.bg)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isCameraSheetPresented) {
+            CameraPicker {
+                // Convertimos a JPEG (calidad 0.9). En el futuro: downscale + compresión.
+                if let data = $0.jpegData(compressionQuality: 0.9) {
+                    selectedPhotoData = data
+                    selectedPhotoItem = nil
+                } else {
+                    errorMessage = "No se pudo procesar la foto."
+                }
+                isCameraSheetPresented = false
+            } onCancel: {
+                isCameraSheetPresented = false
+            }
+            .ignoresSafeArea()
+        }
         .onChange(of: selectedPhotoItem) { _, newValue in
             guard let newValue else {
-                selectedPhotoData = nil
+                // Nota: no limpiamos selectedPhotoData aquí porque puede venir de la cámara.
                 return
             }
             Task {
@@ -216,6 +252,59 @@ struct CompleteChallengeView: View {
             dismiss()
         } catch {
             errorMessage = String(describing: error)
+        }
+    }
+}
+
+// MARK: - Camera Picker (SwiftUI wrapper)
+
+/// SwiftUI wrapper alrededor de UIImagePickerController para usar la cámara.
+/// MVP: solo foto (no video). Retorna UIImage.
+struct CameraPicker: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIImagePickerController
+
+    let onImage: (UIImage) -> Void
+    let onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = .camera
+        picker.mediaTypes = ["public.image"]
+        picker.allowsEditing = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
+        // no-op
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImage: onImage, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let onImage: (UIImage) -> Void
+        private let onCancel: () -> Void
+
+        init(onImage: @escaping (UIImage) -> Void, onCancel: @escaping () -> Void) {
+            self.onImage = onImage
+            self.onCancel = onCancel
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            onCancel()
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]
+        ) {
+            if let image = info[.originalImage] as? UIImage {
+                onImage(image)
+            } else {
+                onCancel()
+            }
         }
     }
 }
